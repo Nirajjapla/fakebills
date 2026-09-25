@@ -27,6 +27,7 @@ export type BillType =
   | 'freelance_invoice';
 
 export type BillingCycle = 'monthly' | 'yearly';
+export type ThemeMode = 'light' | 'dark';
 
 export interface AddressProfile {
   id: string;

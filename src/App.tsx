@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BillCategory, BillType, AddressProfile } from './types';
+import { BillCategory, BillType, AddressProfile, ThemeMode } from './types';
 import { Navbar } from './components/Navbar';
 import { LiveEditorSidebar } from './components/LiveEditorSidebar';
 import { AddressBookModal } from './components/AddressBookModal';
@@ -448,6 +448,25 @@ export function App() {
   const [isFuelStackerOpen, setIsFuelStackerOpen] = useState<boolean>(false);
   const [savedAddresses, setSavedAddresses] = useState<AddressProfile[]>([]);
 
+  // Theme State: 'light' or 'dark' with persistence
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    const saved = localStorage.getItem('billcrafter_theme');
+    return (saved === 'dark' || saved === 'light') ? saved : 'light';
+  });
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('billcrafter_theme', theme);
+  }, [theme]);
+
+  const handleToggleTheme = () => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
   useEffect(() => {
     setSavedAddresses(getSavedAddresses());
   }, [isAddressBookOpen]);
@@ -643,7 +662,7 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
       {/* Top Navbar */}
       <Navbar
         activeType={activeType}
@@ -657,6 +676,8 @@ export function App() {
         onExportImage={handleExportImage}
         onPrint={triggerPrint}
         savedAddressCount={savedAddresses.length}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
       />
 
       {/* Main Split Layout */}
@@ -670,7 +691,7 @@ export function App() {
         />
 
         {/* Right Canvas Document Preview Area */}
-        <main className="flex-1 bg-slate-950 p-6 lg:p-8 overflow-y-auto flex flex-col items-center justify-start min-h-[calc(100vh-57px)]">
+        <main className="flex-1 bg-slate-200/60 dark:bg-slate-950 p-6 lg:p-8 overflow-y-auto flex flex-col items-center justify-start min-h-[calc(100vh-57px)] transition-colors">
           {/* Document Container */}
           <div className="w-full flex flex-col items-center justify-center pb-12">
             <div id="active-bill-document" className="print:m-0 print:p-0">

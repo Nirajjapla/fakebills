@@ -2,49 +2,38 @@ import React, { useState } from 'react';
 import { FuelBillData } from '../types';
 import { FuelThermalReceipt } from './templates/FuelThermalReceipt';
 import { exportToPdf, exportToImage, triggerPrint } from '../utils/pdfExporter';
-import { Plus, Trash2, Printer, Download, Sparkles, Layers, X, Grid, Columns } from 'lucide-react';
+import { 
+  Layers, 
+  Plus, 
+  Trash2, 
+  Download, 
+  Printer, 
+  X, 
+  Sparkles, 
+  Check, 
+  Columns, 
+  Grid, 
+  Calendar,
+  IndianRupee
+} from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const SAMPLE_STATION_NAMES: Record<string, { dealer: string; sub: string; loc: string; pin: string }> = {
-  HP: {
-    dealer: 'SRI SIDDESHWARA SWAMY FS',
-    sub: 'HPCL DEALER',
-    loc: 'ETTAKODI MALUR TQ',
-    pin: 'KOLAR DIST.563160',
-  },
-  IOCL: {
-    dealer: 'SRI VENKATESHWARA FUELS',
-    sub: 'INDIAN OIL DEALER',
-    loc: 'OUTER RING ROAD, BELLANDUR',
-    pin: 'BENGALURU - 560103',
-  },
-  BPCL: {
-    dealer: 'SHREE BALAJI PETROLEUM',
-    sub: 'BHARAT PETROLEUM DEALER',
-    loc: 'NH 44, DEVANAHALLI',
-    pin: 'BENGALURU - 562110',
-  },
-  SHELL: {
-    dealer: 'SHELL INDIA MARKETS PVT LTD',
-    sub: 'AUTO RETAIL STATION',
-    loc: 'WHITEFIELD MAIN ROAD',
-    pin: 'BENGALURU - 560066',
-  },
-  NAYARA: {
-    dealer: 'MAHESHWARI FILLING STATION',
-    sub: 'NAYARA ENERGY DEALER',
-    loc: 'HOSUR ROAD, ELECTRONIC CITY',
-    pin: 'BENGALURU - 560100',
-  }
+const SAMPLE_STATION_NAMES = {
+  HP: { dealer: 'SRI SIDDESHWARA SWAMY FS', sub: 'HPCL DEALER', loc: 'ETTAKODI MALUR TQ', pin: 'KOLAR DIST.563160' },
+  IOCL: { dealer: 'INDIAN OIL RETAIL OUTLET', sub: 'IOCL AUTO CARE', loc: 'OUTER RING ROAD BELLANDUR', pin: 'BENGALURU - 560103' },
+  BPCL: { dealer: 'BHARAT PETROLEUM AUTO SERVICE', sub: 'BPCL DEALER', loc: 'HSR LAYOUT SECTOR 1', pin: 'BENGALURU - 560102' },
+  SHELL: { dealer: 'SHELL INDIA MARKETS PVT LTD', sub: 'AUTO RETAIL STATION', loc: 'WHITEFIELD MAIN ROAD', pin: 'BENGALURU - 560066' },
 };
 
 export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [layoutColumns, setLayoutColumns] = useState<1 | 2>(2);
   const [showCutLines, setShowCutLines] = useState<boolean>(true);
+
+  // Default stacked bills list
   const [bills, setBills] = useState<FuelBillData[]>([
     {
       brand: 'HP',
@@ -54,12 +43,12 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
       cityPincode: 'KOLAR DIST.563160',
       billNo: 'Jun-217412-ORGNL',
       trnsId: '0000000300171246',
-      atndId: '02',
+      atndId: '01',
       receiptType: 'Physical Receipt',
       vehiNo: 'KA-03-MX-8899',
       mobNo: 'NotEntered',
       date: '04/06/2024',
-      time: '08:45:12',
+      time: '09:12:45',
       fpId: '2',
       nozlNo: '4',
       fuelType: 'PETROL',
@@ -72,41 +61,41 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
     },
     {
       brand: 'IOCL',
-      dealerName: 'SRI VENKATESHWARA FUELS',
-      dealerSub: 'INDIAN OIL DEALER',
-      location: 'OUTER RING ROAD, BELLANDUR',
+      dealerName: 'INDIAN OIL RETAIL OUTLET',
+      dealerSub: 'IOCL AUTO CARE',
+      location: 'OUTER RING ROAD BELLANDUR',
       cityPincode: 'BENGALURU - 560103',
-      billNo: 'Jun-491823-ORGNL',
-      trnsId: '0000000300298104',
-      atndId: '01',
+      billNo: 'Jun-481920-ORGNL',
+      trnsId: '0000000300481920',
+      atndId: '02',
       receiptType: 'Physical Receipt',
       vehiNo: 'KA-03-MX-8899',
       mobNo: 'NotEntered',
       date: '12/06/2024',
-      time: '18:22:45',
+      time: '18:32:10',
       fpId: '1',
       nozlNo: '2',
       fuelType: 'PETROL',
-      density: '749.8kg/m3',
-      rate: 102.10,
+      density: '750.2kg/m3',
+      rate: 101.50,
       amount: 2500,
-      volume: 24.48,
-      paymentMode: 'UPI / Card',
+      volume: 24.63,
+      paymentMode: 'UPI / PhonePe',
       footerNote: 'SAVE FUEL SAVE ENVIRONMENT'
     },
     {
       brand: 'BPCL',
-      dealerName: 'SHREE BALAJI PETROLEUM',
-      dealerSub: 'BHARAT PETROLEUM DEALER',
-      location: 'NH 44, DEVANAHALLI',
-      cityPincode: 'BENGALURU - 562110',
-      billNo: 'Jun-839102-ORGNL',
-      trnsId: '0000000300412890',
+      dealerName: 'BHARAT PETROLEUM AUTO SERVICE',
+      dealerSub: 'BPCL DEALER',
+      location: 'HSR LAYOUT SECTOR 1',
+      cityPincode: 'BENGALURU - 560102',
+      billNo: 'Jun-819234-ORGNL',
+      trnsId: '0000000300819234',
       atndId: '04',
       receiptType: 'Physical Receipt',
       vehiNo: 'KA-03-MX-8899',
       mobNo: 'NotEntered',
-      date: '21/06/2024',
+      date: '20/06/2024',
       time: '11:15:30',
       fpId: '3',
       nozlNo: '1',
@@ -246,29 +235,29 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const totalStackedAmount = bills.reduce((sum, b) => sum + b.amount, 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-7xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-7xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden transition-colors">
         {/* Header */}
-        <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/80">
+        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80">
           <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400">
+            <div className="p-2 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400">
               <Layers className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 Fuel Bill Multi-Stacker (Print {bills.length} Bills / A4 Page)
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
                   Total: ₹{totalStackedAmount.toLocaleString('en-IN')}
                 </span>
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Stack multiple compact thermal fuel receipts on a single A4 sheet for expense claims & paper savings.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-700 transition"
+            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition"
           >
             <X className="w-5 h-5" />
           </button>
@@ -277,66 +266,66 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
         {/* Workspace Body */}
         <div className="flex-1 grid grid-cols-12 overflow-hidden">
           {/* Left Controls & Batch Generator */}
-          <div className="col-span-4 p-4 border-r border-slate-800 bg-slate-900/90 overflow-y-auto space-y-4 text-xs">
+          <div className="col-span-4 p-4 border-r border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90 overflow-y-auto space-y-4 text-xs">
             {/* Batch Auto Generator Box */}
-            <div className="p-3 bg-gradient-to-br from-indigo-950/70 to-slate-800/80 border border-indigo-500/30 rounded-xl space-y-3">
-              <div className="flex items-center justify-between text-indigo-300 font-bold text-sm">
-                <span className="flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-amber-400" /> Batch Expense Generator</span>
+            <div className="p-3 bg-white dark:bg-gradient-to-br dark:from-indigo-950/70 dark:to-slate-800/80 border border-slate-200 dark:border-indigo-500/30 rounded-xl space-y-3 shadow-sm">
+              <div className="flex items-center justify-between text-indigo-700 dark:text-indigo-300 font-bold text-sm">
+                <span className="flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-amber-500 dark:text-amber-400" /> Batch Expense Generator</span>
               </div>
               
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-slate-400 block mb-1">Total Target (₹)</label>
+                  <label className="text-slate-600 dark:text-slate-400 block mb-1 font-medium">Total Target (₹)</label>
                   <input
                     type="number"
                     value={batchTotalBudget}
                     onChange={(e) => setBatchTotalBudget(Number(e.target.value))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-white font-bold"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
                   />
                 </div>
                 <div>
-                  <label className="text-slate-400 block mb-1">Number of Bills</label>
+                  <label className="text-slate-600 dark:text-slate-400 block mb-1 font-medium">Number of Bills</label>
                   <input
                     type="number"
                     min="1"
                     max="8"
                     value={batchCount}
                     onChange={(e) => setBatchCount(Number(e.target.value))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-white font-bold"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-slate-400 block mb-1">Month / Year</label>
+                  <label className="text-slate-600 dark:text-slate-400 block mb-1 font-medium">Month / Year</label>
                   <input
                     type="month"
                     value={batchMonth}
                     onChange={(e) => setBatchMonth(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-slate-900 dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="text-slate-400 block mb-1">Vehicle No</label>
+                  <label className="text-slate-600 dark:text-slate-400 block mb-1 font-medium">Vehicle No</label>
                   <input
                     type="text"
                     value={batchVehicleNo}
                     onChange={(e) => setBatchVehicleNo(e.target.value)}
                     placeholder="KA-03-MX-8899"
-                    className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-white"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-slate-900 dark:text-white"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-slate-400 block mb-1">Pump Brands</label>
+                <label className="text-slate-600 dark:text-slate-400 block mb-1 font-medium">Pump Brands</label>
                 <div className="grid grid-cols-5 gap-1 text-center font-bold text-[10px]">
                   {(['MIX', 'HP', 'IOCL', 'BPCL', 'SHELL'] as const).map((b) => (
                     <button
                       key={b}
                       onClick={() => setBatchBrand(b)}
-                      className={`py-1 rounded border transition ${batchBrand === b ? 'bg-indigo-600 text-white border-indigo-400' : 'bg-slate-800 text-slate-300 border-slate-700'}`}
+                      className={`py-1 rounded border transition ${batchBrand === b ? 'bg-indigo-600 text-white border-indigo-500 shadow' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
                     >
                       {b}
                     </button>
@@ -346,36 +335,36 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
               <button
                 onClick={handleGenerateBatch}
-                className="w-full py-2 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold rounded-lg shadow-lg flex items-center justify-center gap-1.5 transition"
+                className="w-full py-2 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold rounded-lg shadow-md flex items-center justify-center gap-1.5 transition"
               >
                 <Sparkles className="w-4 h-4 text-amber-300" /> Auto-Generate {batchCount} Bills (₹{batchTotalBudget})
               </button>
             </div>
 
             {/* Layout Options */}
-            <div className="p-3 bg-slate-800/60 border border-slate-700 rounded-xl space-y-2">
-              <div className="font-bold text-slate-300">A4 Stacking Layout</div>
+            <div className="p-3 bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2 shadow-sm">
+              <div className="font-bold text-slate-800 dark:text-slate-300">A4 Stacking Layout</div>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => setLayoutColumns(1)}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded border font-semibold ${layoutColumns === 1 ? 'bg-indigo-600 text-white border-indigo-400' : 'bg-slate-900 text-slate-400 border-slate-700'}`}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded border font-semibold ${layoutColumns === 1 ? 'bg-indigo-600 text-white border-indigo-500 shadow' : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-400 border-slate-300 dark:border-slate-700'}`}
                 >
                   <Columns className="w-3.5 h-3.5" /> 1 Column (Vertical)
                 </button>
                 <button
                   onClick={() => setLayoutColumns(2)}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded border font-semibold ${layoutColumns === 2 ? 'bg-indigo-600 text-white border-indigo-400' : 'bg-slate-900 text-slate-400 border-slate-700'}`}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded border font-semibold ${layoutColumns === 2 ? 'bg-indigo-600 text-white border-indigo-500 shadow' : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-400 border-slate-300 dark:border-slate-700'}`}
                 >
                   <Grid className="w-3.5 h-3.5" /> 2 Column Grid
                 </button>
               </div>
 
-              <label className="flex items-center space-x-2 pt-1 text-slate-300 cursor-pointer">
+              <label className="flex items-center space-x-2 pt-1 text-slate-700 dark:text-slate-300 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={showCutLines}
                   onChange={(e) => setShowCutLines(e.target.checked)}
-                  className="rounded text-indigo-600 bg-slate-900 border-slate-700"
+                  className="rounded text-indigo-600 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
                 />
                 <span>Show Printable Scissor Cut Lines (✂ - - -)</span>
               </label>
@@ -384,31 +373,31 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
             {/* Bills List & Quick Edit */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="font-bold text-slate-300">Stacked Bills ({bills.length})</span>
+                <span className="font-bold text-slate-800 dark:text-slate-300">Stacked Bills ({bills.length})</span>
                 <button
                   onClick={handleAddSingleBill}
-                  className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                  className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 font-semibold"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add Bill
                 </button>
               </div>
 
               {bills.map((bill, idx) => (
-                <div key={idx} className="p-2.5 bg-slate-800/90 border border-slate-700 rounded-lg space-y-1.5">
+                <div key={idx} className="p-2.5 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-lg space-y-1.5 shadow-sm">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-white">
+                    <span className="font-bold text-slate-900 dark:text-white">
                       #{idx + 1} - {bill.brand} ({bill.date})
                     </span>
                     <button
                       onClick={() => handleDeleteBill(idx)}
-                      className="text-red-400 hover:text-red-300"
+                      className="text-red-500 hover:text-red-600 dark:hover:text-red-400"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-[11px]">
                     <div>
-                      <span className="text-slate-400 block text-[10px]">Amount (₹)</span>
+                      <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Amount (₹)</span>
                       <input
                         type="number"
                         value={bill.amount}
@@ -420,11 +409,11 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
                             volume: Number((amt / (bill.rate || 101.5)).toFixed(2))
                           });
                         }}
-                        className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-white font-bold"
+                        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-0.5 text-slate-900 dark:text-white font-bold"
                       />
                     </div>
                     <div>
-                      <span className="text-slate-400 block text-[10px]">Rate / Liter</span>
+                      <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Rate / Liter</span>
                       <input
                         type="number"
                         value={bill.rate}
@@ -436,27 +425,27 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
                             volume: Number((bill.amount / (r || 101.5)).toFixed(2))
                           });
                         }}
-                        className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-white"
+                        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-0.5 text-slate-900 dark:text-white"
                       />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-[11px]">
                     <div>
-                      <span className="text-slate-400 block text-[10px]">Date</span>
+                      <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Date</span>
                       <input
                         type="text"
                         value={bill.date}
                         onChange={(e) => handleUpdateBill(idx, { ...bill, date: e.target.value })}
-                        className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-white font-mono"
+                        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-0.5 text-slate-900 dark:text-white font-mono"
                       />
                     </div>
                     <div>
-                      <span className="text-slate-400 block text-[10px]">Time</span>
+                      <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Time</span>
                       <input
                         type="text"
                         value={bill.time}
                         onChange={(e) => handleUpdateBill(idx, { ...bill, time: e.target.value })}
-                        className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-white font-mono"
+                        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-0.5 text-slate-900 dark:text-white font-mono"
                       />
                     </div>
                   </div>
@@ -466,10 +455,10 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
           </div>
 
           {/* Right A4 Preview Canvas */}
-          <div className="col-span-8 bg-slate-950 p-6 overflow-y-auto flex flex-col items-center">
+          <div className="col-span-8 bg-slate-100 dark:bg-slate-950 p-6 overflow-y-auto flex flex-col items-center transition-colors">
             {/* Top Download & Print Bar */}
             <div className="w-full max-w-[794px] flex justify-between items-center mb-4 text-xs">
-              <span className="text-slate-400">
+              <span className="text-slate-600 dark:text-slate-400">
                 A4 Sheet Preview (Scaled to Fit) - Ready for Print / PDF Export
               </span>
               <div className="flex space-x-2">
@@ -481,7 +470,7 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 </button>
                 <button
                   onClick={() => exportToImage('fuel-stacked-sheet', 'stacked_fuel_bills.png')}
-                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-lg flex items-center gap-1.5 border border-slate-700"
+                  className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold rounded-lg border border-slate-300 dark:border-slate-700 shadow-sm"
                 >
                   <Download className="w-4 h-4" /> Save PNG
                 </button>
@@ -497,7 +486,7 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
             {/* Printable A4 Container */}
             <div
               id="fuel-stacked-sheet"
-              className="bg-white text-black p-4 w-[794px] min-h-[1123px] shadow-2xl border border-slate-300 relative print:m-0 print:p-2 print:shadow-none"
+              className="bg-white text-black p-4 w-[794px] min-h-[1123px] shadow-xl border border-slate-200 relative print:m-0 print:p-2 print:shadow-none"
             >
               <div className={`grid ${layoutColumns === 2 ? 'grid-cols-2 gap-4' : 'grid-cols-1 gap-6'} items-start`}>
                 {bills.map((b, idx) => (
