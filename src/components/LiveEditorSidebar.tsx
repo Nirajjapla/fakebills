@@ -6,6 +6,7 @@ import {
   extractBillDates, 
   applyDateRangeToBill 
 } from '../utils/dateUtils';
+import { LineItemsEditor } from './LineItemsEditor';
 import { 
   Sparkles, 
   MapPin, 
@@ -1036,7 +1037,7 @@ export const LiveEditorSidebar: React.FC<Props> = ({
         {activeType === 'restaurant_pos' && (
           <div className="space-y-3">
             <div>
-              <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Restaurant Name</label>
+              <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Restaurant / Cafe Name</label>
               <input
                 type="text"
                 value={billData.restaurantName || ''}
@@ -1066,78 +1067,557 @@ export const LiveEditorSidebar: React.FC<Props> = ({
               </div>
             </div>
 
-            <div className="space-y-1">
-              <div className="flex justify-between items-center">
-                <label className="text-slate-700 dark:text-slate-400 font-bold">Food / Drink Items</label>
-                <button
-                  onClick={() => {
-                    const items = billData.items || [];
-                    const newItems = [...items, { name: 'New Item', qty: 1, rate: 200, amount: 200 }];
-                    const sub = newItems.reduce((s, i) => s + i.amount, 0);
-                    const gst = (sub * 5) / 100;
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Discount (₹)</label>
+                <input
+                  type="number"
+                  value={billData.discount || 0}
+                  onChange={(e) => {
+                    const disc = Number(e.target.value);
+                    const sub = billData.subTotal || 0;
+                    const tax = (sub * (billData.cgstPercent + billData.sgstPercent)) / 100;
                     onUpdateData({
                       ...billData,
-                      items: newItems,
-                      subTotal: sub,
-                      grandTotal: sub + gst,
+                      discount: disc,
+                      grandTotal: Number((Math.max(0, sub - disc) + tax + (billData.tip || 0)).toFixed(2))
                     });
                   }}
-                  className="text-emerald-600 dark:text-emerald-400 hover:underline text-[11px] flex items-center gap-1 font-semibold"
-                >
-                  <Plus className="w-3 h-3" /> Add Item
-                </button>
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white"
+                />
               </div>
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Tip / Gratuity (₹)</label>
+                <input
+                  type="number"
+                  value={billData.tip || 0}
+                  onChange={(e) => {
+                    const tip = Number(e.target.value);
+                    const sub = billData.subTotal || 0;
+                    const disc = billData.discount || 0;
+                    const tax = (sub * (billData.cgstPercent + billData.sgstPercent)) / 100;
+                    onUpdateData({
+                      ...billData,
+                      tip: tip,
+                      grandTotal: Number((Math.max(0, sub - disc) + tax + tip).toFixed(2))
+                    });
+                  }}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white"
+                />
+              </div>
+            </div>
 
-              {billData.items?.map((item: any, idx: number) => (
-                <div key={idx} className="flex gap-1.5 items-center">
+            <LineItemsEditor activeType={activeType} billData={billData} onUpdateData={onUpdateData} />
+          </div>
+        )}
+
+        {/* SUPERMARKET & MART CONTROLS */}
+        {activeType === 'supermarket_mart' && (
+          <div className="space-y-3">
+            <div>
+              <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Store / Supermarket Name</label>
+              <input
+                type="text"
+                value={billData.storeName || ''}
+                onChange={(e) => updateField('storeName', e.target.value)}
+                className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
+              />
+            </div>
+
+            <div>
+              <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Branch Address</label>
+              <input
+                type="text"
+                value={billData.branchAddress || ''}
+                onChange={(e) => updateField('branchAddress', e.target.value)}
+                className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Cashier / Counter</label>
+                <input
+                  type="text"
+                  value={billData.cashierName || ''}
+                  onChange={(e) => updateField('cashierName', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Customer Name</label>
+                <input
+                  type="text"
+                  value={billData.customerName || ''}
+                  onChange={(e) => updateField('customerName', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
+                />
+              </div>
+            </div>
+
+            <LineItemsEditor activeType={activeType} billData={billData} onUpdateData={onUpdateData} />
+          </div>
+        )}
+
+        {/* MEDICAL & PHARMACY CONTROLS */}
+        {activeType === 'medical_pharmacy' && (
+          <div className="space-y-3">
+            <div>
+              <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Pharmacy / Medical Store Name</label>
+              <input
+                type="text"
+                value={billData.pharmacyName || ''}
+                onChange={(e) => updateField('pharmacyName', e.target.value)}
+                className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
+              />
+            </div>
+
+            <div>
+              <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Doctor Name & Reg</label>
+              <input
+                type="text"
+                value={billData.doctorName || ''}
+                onChange={(e) => updateField('doctorName', e.target.value)}
+                className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Patient Name</label>
+                <input
+                  type="text"
+                  value={billData.patientName || ''}
+                  onChange={(e) => updateField('patientName', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
+                />
+              </div>
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Age / Gender</label>
+                <div className="grid grid-cols-2 gap-1">
                   <input
                     type="text"
-                    value={item.name}
-                    onChange={(e) => {
-                      const next = [...billData.items];
-                      next[idx].name = e.target.value;
-                      updateField('items', next);
-                    }}
-                    className="flex-1 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-slate-900 dark:text-white"
+                    value={billData.patientAge || '32 Yrs'}
+                    onChange={(e) => updateField('patientAge', e.target.value)}
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-slate-900 dark:text-white"
                   />
                   <input
-                    type="number"
-                    value={item.qty}
-                    onChange={(e) => {
-                      const next = [...billData.items];
-                      const q = Number(e.target.value);
-                      next[idx].qty = q;
-                      next[idx].amount = q * next[idx].rate;
-                      const sub = next.reduce((s: number, i: any) => s + i.amount, 0);
-                      onUpdateData({ ...billData, items: next, subTotal: sub, grandTotal: sub * 1.05 });
-                    }}
-                    className="w-12 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1 py-1 text-center text-slate-900 dark:text-white"
+                    type="text"
+                    value={billData.patientGender || 'Male'}
+                    onChange={(e) => updateField('patientGender', e.target.value)}
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-slate-900 dark:text-white"
                   />
-                  <input
-                    type="number"
-                    value={item.rate}
-                    onChange={(e) => {
-                      const next = [...billData.items];
-                      const r = Number(e.target.value);
-                      next[idx].rate = r;
-                      next[idx].amount = next[idx].qty * r;
-                      const sub = next.reduce((s: number, i: any) => s + i.amount, 0);
-                      onUpdateData({ ...billData, items: next, subTotal: sub, grandTotal: sub * 1.05 });
-                    }}
-                    className="w-16 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-1 py-1 text-right text-slate-900 dark:text-white font-semibold"
-                  />
-                  <button
-                    onClick={() => {
-                      const next = billData.items.filter((_: any, i: number) => i !== idx);
-                      const sub = next.reduce((s: number, i: any) => s + i.amount, 0);
-                      onUpdateData({ ...billData, items: next, subTotal: sub, grandTotal: sub * 1.05 });
-                    }}
-                    className="text-red-500 p-1 hover:text-red-400"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
                 </div>
-              ))}
+              </div>
+            </div>
+
+            <LineItemsEditor activeType={activeType} billData={billData} onUpdateData={onUpdateData} />
+          </div>
+        )}
+
+        {/* E-COMMERCE RETAIL CONTROLS */}
+        {activeType === 'ecommerce_retail' && (
+          <div className="space-y-3">
+            <div>
+              <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Seller / Merchant Name</label>
+              <input
+                type="text"
+                value={billData.sellerName || ''}
+                onChange={(e) => updateField('sellerName', e.target.value)}
+                className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Order ID</label>
+                <input
+                  type="text"
+                  value={billData.orderId || ''}
+                  onChange={(e) => updateField('orderId', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-mono"
+                />
+              </div>
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Invoice No</label>
+                <input
+                  type="text"
+                  value={billData.invoiceNo || ''}
+                  onChange={(e) => updateField('invoiceNo', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-mono font-bold"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Shipping Fee (₹)</label>
+                <input
+                  type="number"
+                  value={billData.shippingFee || 0}
+                  onChange={(e) => updateField('shippingFee', Number(e.target.value))}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Gift Wrap Fee (₹)</label>
+                <input
+                  type="number"
+                  value={billData.giftWrapFee || 0}
+                  onChange={(e) => updateField('giftWrapFee', Number(e.target.value))}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white"
+                />
+              </div>
+            </div>
+
+            <LineItemsEditor activeType={activeType} billData={billData} onUpdateData={onUpdateData} />
+          </div>
+        )}
+
+        {/* FREELANCE INVOICE CONTROLS */}
+        {activeType === 'freelance_invoice' && (
+          <div className="space-y-3">
+            <div>
+              <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Freelancer / Agency Name</label>
+              <input
+                type="text"
+                value={billData.freelancerName || ''}
+                onChange={(e) => updateField('freelancerName', e.target.value)}
+                className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
+              />
+            </div>
+
+            <div>
+              <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Professional Title</label>
+              <input
+                type="text"
+                value={billData.businessTitle || ''}
+                onChange={(e) => updateField('businessTitle', e.target.value)}
+                className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Client Contact</label>
+                <input
+                  type="text"
+                  value={billData.clientName || ''}
+                  onChange={(e) => updateField('clientName', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
+                />
+              </div>
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Client Company</label>
+                <input
+                  type="text"
+                  value={billData.clientCompany || ''}
+                  onChange={(e) => updateField('clientCompany', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Invoice No</label>
+                <input
+                  type="text"
+                  value={billData.invoiceNo || ''}
+                  onChange={(e) => updateField('invoiceNo', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-mono font-bold"
+                />
+              </div>
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Discount %</label>
+                <input
+                  type="number"
+                  value={billData.discountPercent || 0}
+                  onChange={(e) => updateField('discountPercent', Number(e.target.value))}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
+                />
+              </div>
+            </div>
+
+            <LineItemsEditor activeType={activeType} billData={billData} onUpdateData={onUpdateData} />
+          </div>
+        )}
+
+        {/* BSNL BROADBAND CONTROLS */}
+        {activeType === 'bsnl_broadband' && (
+          <div className="space-y-3">
+            <div>
+              <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Customer Full Name</label>
+              <input
+                type="text"
+                value={billData.customerName || ''}
+                onChange={(e) => updateField('customerName', e.target.value)}
+                className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Telephone / Landline</label>
+                <input
+                  type="text"
+                  value={billData.telephoneNumber || ''}
+                  onChange={(e) => updateField('telephoneNumber', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-mono"
+                />
+              </div>
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Account No</label>
+                <input
+                  type="text"
+                  value={billData.accountNo || ''}
+                  onChange={(e) => updateField('accountNo', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-mono"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Tariff Plan</label>
+                <input
+                  type="text"
+                  value={billData.tariffPlan || ''}
+                  onChange={(e) => updateField('tariffPlan', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Recurring Charges (₹)</label>
+                <input
+                  type="number"
+                  value={billData.recurringCharges || 499}
+                  onChange={(e) => {
+                    const rc = Number(e.target.value);
+                    const cgst = Number((rc * 0.09).toFixed(2));
+                    const sgst = Number((rc * 0.09).toFixed(2));
+                    const total = Number((rc + cgst + sgst).toFixed(2));
+                    onUpdateData({
+                      ...billData,
+                      recurringCharges: rc,
+                      cgstAmount: cgst,
+                      sgstAmount: sgst,
+                      currentCharges: total,
+                      amountPayable: total,
+                      totalCurrentCharges: total
+                    });
+                  }}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* JIO FIBER CONTROLS */}
+        {activeType === 'jio_fiber' && (
+          <div className="space-y-3">
+            <div>
+              <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Customer Full Name</label>
+              <input
+                type="text"
+                value={billData.customerName || ''}
+                onChange={(e) => updateField('customerName', e.target.value)}
+                className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Jio Fiber Fixed Line No</label>
+                <input
+                  type="text"
+                  value={billData.jioNumber || ''}
+                  onChange={(e) => updateField('jioNumber', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-mono"
+                />
+              </div>
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Plan Name</label>
+                <input
+                  type="text"
+                  value={billData.planName || ''}
+                  onChange={(e) => updateField('planName', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-semibold"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Plan Taxable Price (₹)</label>
+                <input
+                  type="number"
+                  value={billData.planPrice || 631.01}
+                  onChange={(e) => {
+                    const price = Number(e.target.value);
+                    const cgst = Number((price * 0.09).toFixed(2));
+                    const sgst = Number((price * 0.09).toFixed(2));
+                    const total = Number((price + cgst + sgst).toFixed(2));
+                    onUpdateData({
+                      ...billData,
+                      planPrice: price,
+                      taxableAmount: price,
+                      cgstAmount: cgst,
+                      sgstAmount: sgst,
+                      totalAmount: total
+                    });
+                  }}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
+                />
+              </div>
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Place of Supply</label>
+                <input
+                  type="text"
+                  value={billData.placeOfSupply || '19 West Bengal'}
+                  onChange={(e) => updateField('placeOfSupply', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ELECTRICITY BILL CONTROLS */}
+        {activeType === 'electricity_bill' && (
+          <div className="space-y-3">
+            <div>
+              <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">DISCOM Name</label>
+              <input
+                type="text"
+                value={billData.discomName || ''}
+                onChange={(e) => updateField('discomName', e.target.value)}
+                className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Consumer Name</label>
+                <input
+                  type="text"
+                  value={billData.consumerName || ''}
+                  onChange={(e) => updateField('consumerName', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
+                />
+              </div>
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Consumer / RR No</label>
+                <input
+                  type="text"
+                  value={billData.consumerNo || ''}
+                  onChange={(e) => updateField('consumerNo', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-mono"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Units Consumed (kWh)</label>
+                <input
+                  type="number"
+                  value={billData.unitsConsumed || 385}
+                  onChange={(e) => updateField('unitsConsumed', Number(e.target.value))}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
+                />
+              </div>
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Energy Charges (₹)</label>
+                <input
+                  type="number"
+                  value={billData.energyCharges || 2150.50}
+                  onChange={(e) => updateField('energyCharges', Number(e.target.value))}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* CAB RIDE CONTROLS */}
+        {activeType === 'cab_ride' && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Cab Company</label>
+                <select
+                  value={billData.company || 'Uber'}
+                  onChange={(e) => updateField('company', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2 py-1.5 text-slate-900 dark:text-white font-bold"
+                >
+                  <option value="Uber">Uber</option>
+                  <option value="Ola">Ola</option>
+                  <option value="BluSmart">BluSmart</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Driver Name</label>
+                <input
+                  type="text"
+                  value={billData.driverName || ''}
+                  onChange={(e) => updateField('driverName', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Vehicle Model</label>
+                <input
+                  type="text"
+                  value={billData.vehicleModel || ''}
+                  onChange={(e) => updateField('vehicleModel', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Vehicle Reg No</label>
+                <input
+                  type="text"
+                  value={billData.vehicleNo || ''}
+                  onChange={(e) => updateField('vehicleNo', e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-mono"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Pickup Location</label>
+              <input
+                type="text"
+                value={billData.pickupLocation || ''}
+                onChange={(e) => updateField('pickupLocation', e.target.value)}
+                className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Drop Location</label>
+              <input
+                type="text"
+                value={billData.dropLocation || ''}
+                onChange={(e) => updateField('dropLocation', e.target.value)}
+                className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Base Fare (₹)</label>
+                <input
+                  type="number"
+                  value={billData.baseFare || 150}
+                  onChange={(e) => updateField('baseFare', Number(e.target.value))}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-slate-700 dark:text-slate-400 block mb-1 font-medium">Distance Fare (₹)</label>
+                <input
+                  type="number"
+                  value={billData.distanceFare || 496}
+                  onChange={(e) => updateField('distanceFare', Number(e.target.value))}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white"
+                />
+              </div>
             </div>
           </div>
         )}

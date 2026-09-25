@@ -15,9 +15,22 @@ export const FreelancerInvoice: React.FC<Props> = ({ data, onChange, scale = 1 }
 
   const subtotal = data.items?.reduce((sum, item) => sum + item.amount, 0) || 0;
   const discountAmt = (subtotal * (data.discountPercent || 0)) / 100;
-  const taxable = subtotal - discountAmt;
-  const taxAmt = (taxable * (data.taxPercent || 0)) / 100;
-  const totalAmount = taxable + taxAmt;
+  const isInclusive = data.isGstInclusive || false;
+
+  let taxable = 0;
+  let taxAmt = 0;
+  let totalAmount = 0;
+
+  if (isInclusive) {
+    const grossAfterDisc = Math.max(0, subtotal - discountAmt);
+    taxable = Number((grossAfterDisc / (1 + (data.taxPercent || 0) / 100)).toFixed(2));
+    taxAmt = Number((grossAfterDisc - taxable).toFixed(2));
+    totalAmount = Number(grossAfterDisc.toFixed(2));
+  } else {
+    taxable = Number((subtotal - discountAmt).toFixed(2));
+    taxAmt = Number(((taxable * (data.taxPercent || 0)) / 100).toFixed(2));
+    totalAmount = Number((taxable + taxAmt).toFixed(2));
+  }
 
   useEffect(() => {
     const upiUri = buildUpiUri({
@@ -126,7 +139,7 @@ export const FreelancerInvoice: React.FC<Props> = ({ data, onChange, scale = 1 }
             </tbody>
             <tfoot>
               <tr className="bg-slate-50 border-t border-slate-300 font-semibold">
-                <td colSpan={3} className="py-2 px-3 text-right">Subtotal:</td>
+                <td colSpan={3} className="py-2 px-3 text-right">{isInclusive ? 'Gross Subtotal:' : 'Subtotal:'}</td>
                 <td className="py-2 px-3 text-right">₹{subtotal.toFixed(2)}</td>
               </tr>
               {data.discountPercent > 0 && (
@@ -135,11 +148,26 @@ export const FreelancerInvoice: React.FC<Props> = ({ data, onChange, scale = 1 }
                   <td className="py-1 px-3 text-right">- ₹{discountAmt.toFixed(2)}</td>
                 </tr>
               )}
-              {data.taxPercent > 0 && (
-                <tr className="bg-slate-50 text-slate-700">
-                  <td colSpan={3} className="py-1 px-3 text-right">GST ({data.taxPercent}%):</td>
-                  <td className="py-1 px-3 text-right">₹{taxAmt.toFixed(2)}</td>
-                </tr>
+              {isInclusive ? (
+                <>
+                  <tr className="bg-slate-50 text-slate-600 text-[10px]">
+                    <td colSpan={3} className="py-1 px-3 text-right">Taxable Value:</td>
+                    <td className="py-1 px-3 text-right">₹{taxable.toFixed(2)}</td>
+                  </tr>
+                  {data.taxPercent > 0 && (
+                    <tr className="bg-slate-50 text-slate-700">
+                      <td colSpan={3} className="py-1 px-3 text-right">Incl. GST ({data.taxPercent}%):</td>
+                      <td className="py-1 px-3 text-right">₹{taxAmt.toFixed(2)}</td>
+                    </tr>
+                  )}
+                </>
+              ) : (
+                data.taxPercent > 0 && (
+                  <tr className="bg-slate-50 text-slate-700">
+                    <td colSpan={3} className="py-1 px-3 text-right">GST ({data.taxPercent}%):</td>
+                    <td className="py-1 px-3 text-right">₹{taxAmt.toFixed(2)}</td>
+                  </tr>
+                )
               )}
               <tr className="bg-indigo-900 text-white font-extrabold text-[12px]">
                 <td colSpan={3} className="py-2.5 px-3 text-right uppercase">TOTAL AMOUNT DUE:</td>

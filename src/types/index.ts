@@ -317,6 +317,7 @@ export interface RestaurantReceiptData {
     qty: number;
     rate: number;
     amount: number;
+    gstPercent?: number;
   }>;
   subTotal: number;
   cgstPercent: number;
@@ -330,6 +331,7 @@ export interface RestaurantReceiptData {
   customLogoUrl?: string;
   upiId: string;
   wifiPassword?: string;
+  isGstInclusive?: boolean;
 }
 
 export interface SupermarketBillData {
@@ -358,6 +360,7 @@ export interface SupermarketBillData {
   billingCycle?: BillingCycle;
   customLogoUrl?: string;
   upiId: string;
+  isGstInclusive?: boolean;
 }
 
 export interface MedicalPharmacyData {
@@ -390,6 +393,7 @@ export interface MedicalPharmacyData {
   billingCycle?: BillingCycle;
   customLogoUrl?: string;
   upiId: string;
+  isGstInclusive?: boolean;
 }
 
 export interface ECommerceInvoiceData {
@@ -414,6 +418,7 @@ export interface ECommerceInvoiceData {
   billingCycle?: BillingCycle;
   customLogoUrl?: string;
   upiId: string;
+  isGstInclusive?: boolean;
 }
 
 export interface CabRideData {
@@ -472,4 +477,8 @@ export interface FreelanceInvoiceData {
   signatureName: string;
   billingCycle?: BillingCycle;
   customLogoUrl?: string;
+  subtotal?: number;
+  taxAmount?: number;
+  grandTotal?: number;
+  isGstInclusive?: boolean;
 }

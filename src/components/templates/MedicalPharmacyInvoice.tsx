@@ -134,7 +134,9 @@ export const MedicalPharmacyInvoice: React.FC<Props> = ({ data, onChange, scale 
                 </tr>
               )}
               <tr className="bg-slate-100">
-                <td colSpan={9} className="py-1 px-3 text-right text-slate-600">Total GST Included:</td>
+                <td colSpan={9} className="py-1 px-3 text-right text-slate-600">
+                  {data.isGstInclusive ? 'Total GST Included:' : 'Total GST:'}
+                </td>
                 <td className="py-1 px-2 text-right">₹{data.gstAmount?.toFixed(2)}</td>
               </tr>
               <tr className="bg-emerald-700 text-white font-extrabold text-[11px]">

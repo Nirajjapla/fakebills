@@ -201,7 +201,15 @@ export const Navbar: React.FC<Props> = ({
         {CATEGORIES.map((cat) => (
           <button
             key={cat.id}
-            onClick={() => onSelectCategory(cat.id)}
+            onClick={() => {
+              onSelectCategory(cat.id);
+              if (cat.id !== 'all') {
+                const match = TEMPLATE_CONFIGS.find(t => t.category === cat.id);
+                if (match) {
+                  onSelectType(match.id);
+                }
+              }
+            }}
             className={`px-3 py-1 rounded-lg whitespace-nowrap font-medium transition ${
               activeCategory === cat.id
                 ? 'bg-indigo-600 text-white font-semibold shadow'
