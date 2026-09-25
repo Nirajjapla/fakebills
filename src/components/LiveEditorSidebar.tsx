@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import { BillType, BillingCycle, AddressProfile } from '../types';
 import { getAllIndianCities, generateRealCityAddress } from '../utils/indianAddresses';
 import { 
+  getDateRangePresets, 
+  extractBillDates, 
+  applyDateRangeToBill 
+} from '../utils/dateUtils';
+import { 
   Sparkles, 
   MapPin, 
   IndianRupee, 
@@ -18,7 +23,8 @@ import {
   RotateCcw,
   Store,
   Compass,
-  Layers
+  Layers,
+  Clock
 } from 'lucide-react';
 
 interface Props {
@@ -322,10 +328,27 @@ export const LiveEditorSidebar: React.FC<Props> = ({
   };
 
   const currentCycle = billData.billingCycle || 'monthly';
+  const { fromIso, toIso, issueIso, dueIso } = extractBillDates(activeType, billData);
+  const presets = getDateRangePresets();
+
+  const handleApplyPreset = (presetKey: 'currentMonth' | 'lastMonth' | 'quarter' | 'financialYear') => {
+    const p = presets[presetKey];
+    const updated = applyDateRangeToBill(activeType, billData, p.from, p.to);
+    onUpdateData(updated);
+  };
+
+  const handleDateChange = (field: 'from' | 'to' | 'issue' | 'due', val: string) => {
+    const nextFrom = field === 'from' ? val : fromIso;
+    const nextTo = field === 'to' ? val : toIso;
+    const nextIssue = field === 'issue' ? val : issueIso;
+    const nextDue = field === 'due' ? val : dueIso;
+    const updated = applyDateRangeToBill(activeType, billData, nextFrom, nextTo, nextIssue, nextDue);
+    onUpdateData(updated);
+  };
 
   return (
     <aside className="w-80 lg:w-96 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col h-[calc(100vh-57px)] sticky top-[57px] overflow-y-auto transition-colors">
-      {/* Top Controls: Monthly / Yearly Cycle Switcher */}
+      {/* Top Controls: Frequency, Amount, Date Range, Logo, Addresses */}
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-850 space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -356,6 +379,102 @@ export const LiveEditorSidebar: React.FC<Props> = ({
           >
             <Sparkles className="w-3.5 h-3.5" /> Yearly / Annual
           </button>
+        </div>
+
+        {/* Date Range & Billing Period Selector */}
+        <div className="bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl p-3 space-y-2.5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" /> Date Range & Period
+            </span>
+            <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+              Universal Sync
+            </span>
+          </div>
+
+          {/* Quick Presets Grid */}
+          <div className="grid grid-cols-4 gap-1">
+            <button
+              onClick={() => handleApplyPreset('currentMonth')}
+              className="py-1 px-1.5 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-slate-750 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-200 dark:border-slate-700 transition text-center"
+              title="Current month"
+            >
+              This Month
+            </button>
+            <button
+              onClick={() => handleApplyPreset('lastMonth')}
+              className="py-1 px-1.5 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-slate-750 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-200 dark:border-slate-700 transition text-center"
+              title="Previous month"
+            >
+              Last Month
+            </button>
+            <button
+              onClick={() => handleApplyPreset('quarter')}
+              className="py-1 px-1.5 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-slate-750 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-200 dark:border-slate-700 transition text-center"
+              title="Current quarter (3 Months)"
+            >
+              Quarter
+            </button>
+            <button
+              onClick={() => handleApplyPreset('financialYear')}
+              className="py-1 px-1.5 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-slate-750 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-200 dark:border-slate-700 transition text-center"
+              title="Indian Financial Year (01 Apr - 31 Mar)"
+            >
+              FY 24-25
+            </button>
+          </div>
+
+          {/* From Date & To Date Range Inputs */}
+          <div className="grid grid-cols-2 gap-2 pt-0.5">
+            <div>
+              <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mb-0.5">
+                From Date
+              </label>
+              <input
+                type="date"
+                value={fromIso}
+                onChange={(e) => handleDateChange('from', e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-2 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mb-0.5">
+                To Date
+              </label>
+              <input
+                type="date"
+                value={toIso}
+                onChange={(e) => handleDateChange('to', e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-2 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+          </div>
+
+          {/* Issue Date & Due Date Inputs */}
+          <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+            <div>
+              <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mb-0.5">
+                Bill / Issue Date
+              </label>
+              <input
+                type="date"
+                value={issueIso}
+                onChange={(e) => handleDateChange('issue', e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-2 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block mb-0.5">
+                Due / Pay-by Date
+              </label>
+              <input
+                type="date"
+                value={dueIso}
+                onChange={(e) => handleDateChange('due', e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg px-2 py-1 text-xs font-medium focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Big Quick Amount Adjuster */}

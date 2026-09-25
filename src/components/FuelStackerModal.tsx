@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FuelBillData } from '../types';
 import { FuelThermalReceipt } from './templates/FuelThermalReceipt';
 import { exportToPdf, exportToImage, triggerPrint } from '../utils/pdfExporter';
+import { getDateRangePresets, formatDateStr } from '../utils/dateUtils';
 import { 
   Layers, 
   Plus, 
@@ -134,24 +135,50 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
   ]);
 
   // Batch generator state
+  const presets = getDateRangePresets();
   const [batchTotalBudget, setBatchTotalBudget] = useState<number>(8000);
   const [batchCount, setBatchCount] = useState<number>(4);
   const [batchVehicleNo, setBatchVehicleNo] = useState<string>('KA-03-MX-8899');
   const [batchBrand, setBatchBrand] = useState<'HP' | 'IOCL' | 'BPCL' | 'SHELL' | 'MIX'>('MIX');
-  const [batchMonth, setBatchMonth] = useState<string>('2024-06');
+  const [batchFromDate, setBatchFromDate] = useState<string>(presets.currentMonth.from);
+  const [batchToDate, setBatchToDate] = useState<string>(presets.currentMonth.to);
 
   if (!isOpen) return null;
+
+  const handleApplyPreset = (presetKey: 'currentMonth' | 'lastMonth' | 'quarter' | 'financialYear') => {
+    const p = presets[presetKey];
+    setBatchFromDate(p.from);
+    setBatchToDate(p.to);
+  };
 
   const handleGenerateBatch = () => {
     const brands: Array<'HP' | 'IOCL' | 'BPCL' | 'SHELL'> = ['HP', 'IOCL', 'BPCL', 'SHELL'];
     const generated: FuelBillData[] = [];
     const avgAmount = Math.round(batchTotalBudget / batchCount);
-    const [year, month] = batchMonth.split('-');
+    
+    const startDate = new Date(batchFromDate);
+    const endDate = new Date(batchToDate);
+    const validStart = !isNaN(startDate.getTime()) ? startDate : new Date();
+    const validEnd = !isNaN(endDate.getTime()) ? endDate : new Date();
+    const startMs = validStart.getTime();
+    const endMs = validEnd.getTime();
+    const spanMs = Math.max(0, endMs - startMs);
 
     for (let i = 0; i < batchCount; i++) {
       const selectedBrand = batchBrand === 'MIX' ? brands[i % brands.length] : batchBrand;
       const stationInfo = SAMPLE_STATION_NAMES[selectedBrand] || SAMPLE_STATION_NAMES.HP;
-      const day = String(Math.min(28, 3 + Math.floor(i * (24 / batchCount)) + Math.floor(Math.random() * 2))).padStart(2, '0');
+      
+      // Calculate date distributed evenly across range
+      const ratio = batchCount > 1 ? i / (batchCount - 1) : 0.5;
+      const jitter = batchCount > 1 ? (Math.random() - 0.5) * (spanMs / batchCount) * 0.4 : 0;
+      const targetMs = Math.min(endMs, Math.max(startMs, startMs + ratio * spanMs + jitter));
+      const billDateObj = new Date(targetMs);
+      
+      const day = String(billDateObj.getDate()).padStart(2, '0');
+      const monthNum = String(billDateObj.getMonth() + 1).padStart(2, '0');
+      const yearNum = billDateObj.getFullYear();
+      const monthShort = billDateObj.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+      
       const hour = String(8 + Math.floor(Math.random() * 12)).padStart(2, '0');
       const min = String(Math.floor(Math.random() * 59)).padStart(2, '0');
       const sec = String(Math.floor(Math.random() * 59)).padStart(2, '0');
@@ -162,7 +189,7 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
       const rate = 101.50 + Math.floor(Math.random() * 30) / 10;
       const volume = Number((billAmount / rate).toFixed(2));
-      const randomBillNum = `${month.toUpperCase()}-${Math.floor(100000 + Math.random() * 900000)}-ORGNL`;
+      const randomBillNum = `${monthShort}-${Math.floor(100000 + Math.random() * 900000)}-ORGNL`;
       const randomTrns = `0000000300${Math.floor(100000 + Math.random() * 900000)}`;
 
       generated.push({
@@ -177,7 +204,7 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
         receiptType: 'Physical Receipt',
         vehiNo: batchVehicleNo || 'NotEntered',
         mobNo: 'NotEntered',
-        date: `${day}/${month}/${year}`,
+        date: `${day}/${monthNum}/${yearNum}`,
         time: `${hour}:${min}:${sec}`,
         fpId: `${1 + Math.floor(Math.random() * 4)}`,
         nozlNo: `${1 + Math.floor(Math.random() * 6)}`,
@@ -296,26 +323,75 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 </div>
               </div>
 
+              {/* Date Range Presets */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-slate-600 dark:text-slate-400 font-medium text-[11px] flex items-center gap-1">
+                    <Calendar className="w-3 h-3 text-indigo-500 dark:text-indigo-400" /> Date Range & Period
+                  </label>
+                </div>
+                <div className="grid grid-cols-4 gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleApplyPreset('currentMonth')}
+                    className="py-1 px-1 rounded text-[9.5px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-300 dark:border-slate-700 transition text-center"
+                  >
+                    This Month
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyPreset('lastMonth')}
+                    className="py-1 px-1 rounded text-[9.5px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-300 dark:border-slate-700 transition text-center"
+                  >
+                    Last Month
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyPreset('quarter')}
+                    className="py-1 px-1 rounded text-[9.5px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-300 dark:border-slate-700 transition text-center"
+                  >
+                    Quarter
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyPreset('financialYear')}
+                    className="py-1 px-1 rounded text-[9.5px] font-bold bg-slate-100 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300 border border-slate-300 dark:border-slate-700 transition text-center"
+                  >
+                    FY 24-25
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-slate-600 dark:text-slate-400 block mb-1 font-medium">Month / Year</label>
+                  <label className="text-slate-600 dark:text-slate-400 block mb-1 font-medium">From Date</label>
                   <input
-                    type="month"
-                    value={batchMonth}
-                    onChange={(e) => setBatchMonth(e.target.value)}
+                    type="date"
+                    value={batchFromDate}
+                    onChange={(e) => setBatchFromDate(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-slate-900 dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="text-slate-600 dark:text-slate-400 block mb-1 font-medium">Vehicle No</label>
+                  <label className="text-slate-600 dark:text-slate-400 block mb-1 font-medium">To Date</label>
                   <input
-                    type="text"
-                    value={batchVehicleNo}
-                    onChange={(e) => setBatchVehicleNo(e.target.value)}
-                    placeholder="KA-03-MX-8899"
+                    type="date"
+                    value={batchToDate}
+                    onChange={(e) => setBatchToDate(e.target.value)}
                     className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-slate-900 dark:text-white"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="text-slate-600 dark:text-slate-400 block mb-1 font-medium">Vehicle No</label>
+                <input
+                  type="text"
+                  value={batchVehicleNo}
+                  onChange={(e) => setBatchVehicleNo(e.target.value)}
+                  placeholder="KA-03-MX-8899"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-slate-900 dark:text-white"
+                />
               </div>
 
               <div>
