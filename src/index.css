@@ -11,15 +11,68 @@
 
 /* Print Styles */
 @media print {
-  body {
+  html, body {
     background: #ffffff !important;
     color: #000000 !important;
     padding: 0 !important;
     margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
   }
   
-  header, aside, button, nav, .no-print, .no-export {
+  header, aside, button, nav, .no-print, .no-export, [data-no-print="true"] {
     display: none !important;
+  }
+
+  /* When Fuel Multi-Stacker Modal is open, hide underlying app document preview */
+  body:has(#fuel-stacked-sheet) #active-bill-document,
+  body:has(#fuel-stacked-sheet) main,
+  body:has(#fuel-stacked-sheet) .app-navbar,
+  body:has(#fuel-stacked-sheet) .app-sidebar {
+    display: none !important;
+  }
+
+  .fuel-stacker-modal-overlay {
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    width: 100% !important;
+    height: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    display: block !important;
+  }
+
+  .fuel-stacker-modal-dialog {
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    background: transparent !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
+  .fuel-stacker-modal-body {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    width: 100% !important;
+  }
+
+  .fuel-stacker-preview-col {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    width: 100% !important;
+    overflow: visible !important;
+    display: block !important;
   }
 
   main {

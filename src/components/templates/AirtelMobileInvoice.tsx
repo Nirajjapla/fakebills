@@ -255,9 +255,6 @@ export const AirtelMobileInvoice: React.FC<Props> = ({ data, onChange, scale = 1
         <div className="text-center text-[8px] text-slate-500 italic mt-1">
           This is an electronically generated statement and does not require any signature
         </div>
-        <div className="text-right text-[8px] text-slate-400 mt-1">
-          Page 1 of 3
-        </div>
       </div>
     </div>
   );

@@ -291,10 +291,10 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const isCompactReceipt = layoutMode !== '1col_2';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 dark:bg-black/85 backdrop-blur-sm p-3 lg:p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-[1500px] max-h-[94vh] flex flex-col shadow-2xl overflow-hidden transition-colors">
+    <div className="fuel-stacker-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/70 dark:bg-black/85 backdrop-blur-sm p-3 lg:p-4 overflow-y-auto print:p-0 print:m-0 print:bg-transparent print:static print:overflow-visible print:block print:w-full">
+      <div className="fuel-stacker-modal-dialog bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-[1500px] max-h-[94vh] flex flex-col shadow-2xl overflow-hidden transition-colors print:border-none print:shadow-none print:rounded-none print:w-full print:max-w-none print:max-h-none print:overflow-visible print:bg-transparent print:block print:p-0 print:m-0">
         {/* Header */}
-        <div className="p-3.5 lg:p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80">
+        <div className="p-3.5 lg:p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80 no-print print:hidden">
           <div className="flex items-center space-x-3">
             <div className="p-2 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400">
               <Layers className="w-6 h-6" />
@@ -323,9 +323,9 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Workspace Body */}
-        <div className="flex-1 grid grid-cols-12 overflow-hidden">
+        <div className="fuel-stacker-modal-body flex-1 grid grid-cols-12 overflow-hidden print:block print:w-full print:p-0 print:m-0 print:overflow-visible">
           {/* Left Controls & Batch Generator */}
-          <div className="col-span-4 p-4 border-r border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90 overflow-y-auto space-y-3 text-xs">
+          <div className="col-span-4 p-4 border-r border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90 overflow-y-auto space-y-3 text-xs no-print print:hidden">
             {/* Batch Auto Generator Box */}
             <div className="p-3 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2.5 shadow-sm">
               <div className="flex items-center justify-between text-indigo-700 dark:text-indigo-300 font-bold text-xs">
@@ -623,9 +623,9 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
           </div>
 
           {/* Right A4 Preview Canvas */}
-          <div className="col-span-8 bg-slate-100 dark:bg-slate-950 p-4 lg:p-6 overflow-y-auto flex flex-col items-center transition-colors">
+          <div className="fuel-stacker-preview-col col-span-8 bg-slate-100 dark:bg-slate-950 p-4 lg:p-6 overflow-y-auto flex flex-col items-center transition-colors print:col-span-12 print:w-full print:p-0 print:m-0 print:bg-transparent print:overflow-visible print:block">
             {/* Top Download & Print Bar */}
-            <div className="w-full max-w-[794px] flex flex-wrap justify-between items-center mb-4 gap-2 text-xs">
+            <div className="w-full max-w-[794px] flex flex-wrap justify-between items-center mb-4 gap-2 text-xs no-print print:hidden">
               <div className="text-slate-700 dark:text-slate-300 font-semibold flex items-center gap-1.5">
                 <FileText className="w-4 h-4 text-indigo-500" />
                 <span>A4 Sheet Preview • {totalPages} {totalPages === 1 ? 'Page' : 'Pages'} ({bills.length} Bills Total)</span>
@@ -657,7 +657,7 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
               {pageChunks.map((pageBills, pageIdx) => (
                 <div
                   key={pageIdx}
-                  className="a4-page-sheet bg-white text-black w-[794px] h-[1123px] min-h-[1123px] max-h-[1123px] p-6 shadow-2xl border border-slate-300 flex flex-col justify-between box-border relative select-text overflow-hidden"
+                  className="a4-page-sheet bg-white text-black w-[794px] h-[1123px] min-h-[1123px] max-h-[1123px] p-6 shadow-2xl border border-slate-300 flex flex-col justify-start box-border relative select-text overflow-hidden"
                 >
                   {/* Optional Claim Header */}
                   {showSheetHeader && (
@@ -670,10 +670,10 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
                       </div>
                       <div className="text-right">
                         <div className="text-xs font-black text-indigo-950">
-                          Page Amount: ₹{pageBills.reduce((s, b) => s + b.amount, 0).toLocaleString('en-IN')}
+                          Amount: ₹{pageBills.reduce((s, b) => s + b.amount, 0).toLocaleString('en-IN')}
                         </div>
                         <div className="text-[9.5px] text-slate-600 font-mono font-bold">
-                          Page {pageIdx + 1} of {totalPages} ({pageBills.length} Bills)
+                          {pageBills.length} {pageBills.length === 1 ? 'Receipt' : 'Receipts'}
                         </div>
                       </div>
                     </div>
@@ -702,12 +702,6 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         )}
                       </div>
                     ))}
-                  </div>
-
-                  {/* Sheet Footer */}
-                  <div className="border-t border-slate-300 pt-2 mt-2 flex justify-between items-center text-[9px] text-slate-500 font-mono shrink-0">
-                    <span>Page {pageIdx + 1} of {totalPages} • Official Fuel Reimbursement Documentation</span>
-                    <span>Total Claim: ₹{totalStackedAmount.toLocaleString('en-IN')} • Generated via BillCrafter Pro</span>
                   </div>
                 </div>
               ))}

@@ -230,11 +230,6 @@ export const AirtelPostpaidStatement: React.FC<Props> = ({ data, onChange, scale
           </table>
         </div>
       </div>
-
-      {/* Footer */}
-      <div className="text-right text-[10px] text-slate-500 pt-4 border-t border-slate-200">
-        Page 1 of 6
-      </div>
     </div>
   );
 };

@@ -348,7 +348,7 @@ export const LiveEditorSidebar: React.FC<Props> = ({
   };
 
   return (
-    <aside className="w-80 lg:w-96 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col h-[calc(100vh-57px)] sticky top-[57px] overflow-y-auto transition-colors">
+    <aside className="app-sidebar no-print w-80 lg:w-96 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col h-[calc(100vh-57px)] sticky top-[57px] overflow-y-auto transition-colors">
       {/* Top Controls: Frequency, Amount, Date Range, Logo, Addresses */}
       <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-850 space-y-3">
         <div className="flex items-center justify-between">

@@ -243,9 +243,8 @@ export const BSNLBroadbandBill: React.FC<Props> = ({ data, onChange, scale = 1 }
           <div>Invoice Date: {data.invoiceDate}</div>
           <div className="font-extrabold text-blue-900">Amount Payable: ₹{data.amountPayable?.toFixed(2)}</div>
         </div>
-        <div className="flex justify-between items-center mt-1">
+        <div className="flex justify-start items-center mt-1">
           <BrandAssets.Barcode value={data.invoiceNo} height={16} />
-          <span className="text-slate-400">Page 1 of 3</span>
         </div>
       </div>
     </div>
