@@ -15,10 +15,53 @@ export async function exportToPdf(
     return;
   }
 
-  // Target the pure document element inside (avoiding any outer UI wrapper, shadows or padding)
-  const targetElement = (container.firstElementChild as HTMLElement) || container;
+  // Check if this container contains multiple individual A4 page sheets (e.g. multi-stacker)
+  const pageSheets = container.querySelectorAll<HTMLElement>('.a4-page-sheet');
 
   try {
+    const { format = 'a4', orientation = 'portrait' } = options;
+
+    if (pageSheets.length > 0) {
+      // Multi-page A4 document exporter: Render each A4 sheet on its own discrete PDF page
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      for (let i = 0; i < pageSheets.length; i++) {
+        const pageEl = pageSheets[i];
+        if (i > 0) pdf.addPage();
+
+        const canvas = await html2canvas(pageEl, {
+          scale: 2.5, // 240+ DPI crisp rendering
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          scrollX: 0,
+          scrollY: 0,
+          ignoreElements: (element) => {
+            return (
+              element.classList.contains('no-export') ||
+              element.classList.contains('no-print') ||
+              element.getAttribute('data-no-export') === 'true'
+            );
+          },
+        });
+
+        const imgData = canvas.toDataURL('image/png', 1.0);
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+      }
+
+      pdf.save(filename);
+      return;
+    }
+
+    // Target the pure document element inside (avoiding any outer UI wrapper, shadows or padding)
+    const targetElement = (elementId === 'fuel-stacked-sheet' ? container : (container.firstElementChild as HTMLElement) || container);
+
     const canvas = await html2canvas(targetElement, {
       scale: 3, // Ultra-sharp 300+ DPI output for barcodes, numbers & QR codes
       useCORS: true,
@@ -36,7 +79,6 @@ export async function exportToPdf(
     });
 
     const imgData = canvas.toDataURL('image/png', 1.0);
-    const { format = 'a4', orientation = 'portrait' } = options;
 
     if (format === 'thermal') {
       // Thermal receipt dimensions (standard 80mm roll width)
@@ -96,7 +138,8 @@ export async function exportToImage(elementId: string, filename: string = 'bill.
   const container = document.getElementById(elementId);
   if (!container) return;
 
-  const targetElement = (container.firstElementChild as HTMLElement) || container;
+  const pageSheets = container.querySelectorAll<HTMLElement>('.a4-page-sheet');
+  const targetElement = pageSheets.length > 0 ? pageSheets[0] : ((elementId === 'fuel-stacked-sheet' ? container : (container.firstElementChild as HTMLElement)) || container);
 
   try {
     const canvas = await html2canvas(targetElement, {

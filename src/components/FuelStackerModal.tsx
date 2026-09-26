@@ -15,13 +15,18 @@ import {
   Columns, 
   Grid, 
   Calendar,
-  IndianRupee
+  IndianRupee,
+  FileText,
+  FileDown,
+  Scissors
 } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
 }
+
+export type StackerLayoutMode = '2col_4' | '1col_2' | '1col_3' | '2col_6';
 
 const SAMPLE_STATION_NAMES = {
   HP: { dealer: 'SRI SIDDESHWARA SWAMY FS', sub: 'HPCL DEALER', loc: 'ETTAKODI MALUR TQ', pin: 'KOLAR DIST.563160' },
@@ -31,8 +36,9 @@ const SAMPLE_STATION_NAMES = {
 };
 
 export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  const [layoutColumns, setLayoutColumns] = useState<1 | 2>(2);
+  const [layoutMode, setLayoutMode] = useState<StackerLayoutMode>('2col_4');
   const [showCutLines, setShowCutLines] = useState<boolean>(true);
+  const [showSheetHeader, setShowSheetHeader] = useState<boolean>(true);
 
   // Default stacked bills list
   const [bills, setBills] = useState<FuelBillData[]>([
@@ -232,7 +238,7 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
       trnsId: `0000000300${Math.floor(100000 + Math.random() * 900000)}`,
       atndId: '01',
       receiptType: 'Physical Receipt',
-      vehiNo: 'KA-03-MX-8899',
+      vehiNo: batchVehicleNo || 'KA-03-MX-8899',
       mobNo: 'NotEntered',
       date: new Date().toLocaleDateString('en-GB'),
       time: new Date().toLocaleTimeString('en-GB'),
@@ -261,24 +267,50 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
   const totalStackedAmount = bills.reduce((sum, b) => sum + b.amount, 0);
 
+  // Pagination calculation based on layout mode
+  const getBillsPerPage = (mode: StackerLayoutMode): number => {
+    switch (mode) {
+      case '1col_2': return 2;
+      case '1col_3': return 3;
+      case '2col_6': return 6;
+      case '2col_4':
+      default:
+        return 4;
+    }
+  };
+
+  const billsPerPage = getBillsPerPage(layoutMode);
+  const totalPages = Math.ceil(bills.length / billsPerPage) || 1;
+
+  // Group bills into discrete A4 pages
+  const pageChunks: FuelBillData[][] = [];
+  for (let i = 0; i < totalPages; i++) {
+    pageChunks.push(bills.slice(i * billsPerPage, (i + 1) * billsPerPage));
+  }
+
+  const isCompactReceipt = layoutMode !== '1col_2';
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-7xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden transition-colors">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 dark:bg-black/85 backdrop-blur-sm p-3 lg:p-4 overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl w-full max-w-[1500px] max-h-[94vh] flex flex-col shadow-2xl overflow-hidden transition-colors">
         {/* Header */}
-        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80">
+        <div className="p-3.5 lg:p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/80">
           <div className="flex items-center space-x-3">
             <div className="p-2 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400">
               <Layers className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                Fuel Bill Multi-Stacker (Print {bills.length} Bills / A4 Page)
+              <h2 className="text-base lg:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                Fuel Bill Multi-Stacker (A4 Print Engine)
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-                  Total: ₹{totalStackedAmount.toLocaleString('en-IN')}
+                  {bills.length} Bills • ₹{totalStackedAmount.toLocaleString('en-IN')} Total
+                </span>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300">
+                  {totalPages} A4 {totalPages === 1 ? 'Page' : 'Pages'}
                 </span>
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Stack multiple compact thermal fuel receipts on a single A4 sheet for expense claims & paper savings.
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Fit multiple authentic thermal fuel receipts onto single or multi-page A4 sheets with zero overflow or awkward cuts.
               </p>
             </div>
           </div>
@@ -293,32 +325,32 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
         {/* Workspace Body */}
         <div className="flex-1 grid grid-cols-12 overflow-hidden">
           {/* Left Controls & Batch Generator */}
-          <div className="col-span-4 p-4 border-r border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90 overflow-y-auto space-y-4 text-xs">
+          <div className="col-span-4 p-4 border-r border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90 overflow-y-auto space-y-3 text-xs">
             {/* Batch Auto Generator Box */}
-            <div className="p-3 bg-white dark:bg-gradient-to-br dark:from-indigo-950/70 dark:to-slate-800/80 border border-slate-200 dark:border-indigo-500/30 rounded-xl space-y-3 shadow-sm">
-              <div className="flex items-center justify-between text-indigo-700 dark:text-indigo-300 font-bold text-sm">
-                <span className="flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-amber-500 dark:text-amber-400" /> Batch Expense Generator</span>
+            <div className="p-3 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2.5 shadow-sm">
+              <div className="flex items-center justify-between text-indigo-700 dark:text-indigo-300 font-bold text-xs">
+                <span className="flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-amber-500" /> Batch Expense Generator</span>
               </div>
               
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-slate-600 dark:text-slate-400 block mb-1 font-medium">Total Target (₹)</label>
+                  <label className="text-slate-600 dark:text-slate-400 block mb-0.5 font-medium text-[11px]">Total Budget (₹)</label>
                   <input
                     type="number"
                     value={batchTotalBudget}
                     onChange={(e) => setBatchTotalBudget(Number(e.target.value))}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-slate-900 dark:text-white font-bold"
                   />
                 </div>
                 <div>
-                  <label className="text-slate-600 dark:text-slate-400 block mb-1 font-medium">Number of Bills</label>
+                  <label className="text-slate-600 dark:text-slate-400 block mb-0.5 font-medium text-[11px]">Total Bills Count</label>
                   <input
                     type="number"
                     min="1"
-                    max="8"
+                    max="16"
                     value={batchCount}
                     onChange={(e) => setBatchCount(Number(e.target.value))}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2.5 py-1.5 text-slate-900 dark:text-white font-bold"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-slate-900 dark:text-white font-bold"
                   />
                 </div>
               </div>
@@ -326,8 +358,8 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
               {/* Date Range Presets */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className="text-slate-600 dark:text-slate-400 font-medium text-[11px] flex items-center gap-1">
-                    <Calendar className="w-3 h-3 text-indigo-500 dark:text-indigo-400" /> Date Range & Period
+                  <label className="text-slate-600 dark:text-slate-400 font-medium text-[10.5px] flex items-center gap-1">
+                    <Calendar className="w-3 h-3 text-indigo-500" /> Date Range & Period
                   </label>
                 </div>
                 <div className="grid grid-cols-4 gap-1">
@@ -364,27 +396,27 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-slate-600 dark:text-slate-400 block mb-1 font-medium">From Date</label>
+                  <label className="text-slate-600 dark:text-slate-400 block mb-0.5 font-medium text-[10.5px]">From Date</label>
                   <input
                     type="date"
                     value={batchFromDate}
                     onChange={(e) => setBatchFromDate(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-slate-900 dark:text-white"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-0.5 text-slate-900 dark:text-white text-[11px]"
                   />
                 </div>
                 <div>
-                  <label className="text-slate-600 dark:text-slate-400 block mb-1 font-medium">To Date</label>
+                  <label className="text-slate-600 dark:text-slate-400 block mb-0.5 font-medium text-[10.5px]">To Date</label>
                   <input
                     type="date"
                     value={batchToDate}
                     onChange={(e) => setBatchToDate(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-1 text-slate-900 dark:text-white"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-0.5 text-slate-900 dark:text-white text-[11px]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-slate-600 dark:text-slate-400 block mb-1 font-medium">Vehicle No</label>
+                <label className="text-slate-600 dark:text-slate-400 block mb-0.5 font-medium text-[10.5px]">Vehicle No</label>
                 <input
                   type="text"
                   value={batchVehicleNo}
@@ -395,7 +427,7 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
 
               <div>
-                <label className="text-slate-600 dark:text-slate-400 block mb-1 font-medium">Pump Brands</label>
+                <label className="text-slate-600 dark:text-slate-400 block mb-0.5 font-medium text-[10.5px]">Pump Brands</label>
                 <div className="grid grid-cols-5 gap-1 text-center font-bold text-[10px]">
                   {(['MIX', 'HP', 'IOCL', 'BPCL', 'SHELL'] as const).map((b) => (
                     <button
@@ -411,45 +443,102 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
               <button
                 onClick={handleGenerateBatch}
-                className="w-full py-2 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold rounded-lg shadow-md flex items-center justify-center gap-1.5 transition"
+                className="w-full py-2 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold rounded-lg shadow-md flex items-center justify-center gap-1.5 transition text-xs"
               >
                 <Sparkles className="w-4 h-4 text-amber-300" /> Auto-Generate {batchCount} Bills (₹{batchTotalBudget})
               </button>
             </div>
 
-            {/* Layout Options */}
-            <div className="p-3 bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2 shadow-sm">
-              <div className="font-bold text-slate-800 dark:text-slate-300">A4 Stacking Layout</div>
-              <div className="grid grid-cols-2 gap-2">
+            {/* A4 Layout Density Selector */}
+            <div className="p-3 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2.5 shadow-sm">
+              <div className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center justify-between">
+                <span>A4 Page Stacking Density</span>
+                <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-mono">
+                  {billsPerPage} / page ({totalPages} {totalPages === 1 ? 'page' : 'pages'})
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-1.5">
                 <button
-                  onClick={() => setLayoutColumns(1)}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded border font-semibold ${layoutColumns === 1 ? 'bg-indigo-600 text-white border-indigo-500 shadow' : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-400 border-slate-300 dark:border-slate-700'}`}
+                  type="button"
+                  onClick={() => setLayoutMode('2col_4')}
+                  className={`py-1.5 px-2 rounded-lg border text-[11px] font-bold text-left transition flex flex-col ${
+                    layoutMode === '2col_4'
+                      ? 'bg-indigo-600 text-white border-indigo-500 shadow'
+                      : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                  }`}
                 >
-                  <Columns className="w-3.5 h-3.5" /> 1 Column (Vertical)
+                  <span className="flex items-center gap-1"><Grid className="w-3.5 h-3.5" /> 4 Bills / Page</span>
+                  <span className={`text-[9px] font-normal ${layoutMode === '2col_4' ? 'text-indigo-100' : 'text-slate-500'}`}>2×2 Standard Grid (Recommended)</span>
                 </button>
+
                 <button
-                  onClick={() => setLayoutColumns(2)}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded border font-semibold ${layoutColumns === 2 ? 'bg-indigo-600 text-white border-indigo-500 shadow' : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-400 border-slate-300 dark:border-slate-700'}`}
+                  type="button"
+                  onClick={() => setLayoutMode('1col_2')}
+                  className={`py-1.5 px-2 rounded-lg border text-[11px] font-bold text-left transition flex flex-col ${
+                    layoutMode === '1col_2'
+                      ? 'bg-indigo-600 text-white border-indigo-500 shadow'
+                      : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                  }`}
                 >
-                  <Grid className="w-3.5 h-3.5" /> 2 Column Grid
+                  <span className="flex items-center gap-1"><Columns className="w-3.5 h-3.5" /> 2 Bills / Page</span>
+                  <span className={`text-[9px] font-normal ${layoutMode === '1col_2' ? 'text-indigo-100' : 'text-slate-500'}`}>1 Column Full Size</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setLayoutMode('1col_3')}
+                  className={`py-1.5 px-2 rounded-lg border text-[11px] font-bold text-left transition flex flex-col ${
+                    layoutMode === '1col_3'
+                      ? 'bg-indigo-600 text-white border-indigo-500 shadow'
+                      : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                  }`}
+                >
+                  <span className="flex items-center gap-1"><Columns className="w-3.5 h-3.5" /> 3 Bills / Page</span>
+                  <span className={`text-[9px] font-normal ${layoutMode === '1col_3' ? 'text-indigo-100' : 'text-slate-500'}`}>1 Column Compact</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setLayoutMode('2col_6')}
+                  className={`py-1.5 px-2 rounded-lg border text-[11px] font-bold text-left transition flex flex-col ${
+                    layoutMode === '2col_6'
+                      ? 'bg-indigo-600 text-white border-indigo-500 shadow'
+                      : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                  }`}
+                >
+                  <span className="flex items-center gap-1"><Grid className="w-3.5 h-3.5" /> 6 Bills / Page</span>
+                  <span className={`text-[9px] font-normal ${layoutMode === '2col_6' ? 'text-indigo-100' : 'text-slate-500'}`}>2×3 High Density</span>
                 </button>
               </div>
 
-              <label className="flex items-center space-x-2 pt-1 text-slate-700 dark:text-slate-300 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showCutLines}
-                  onChange={(e) => setShowCutLines(e.target.checked)}
-                  className="rounded text-indigo-600 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
-                />
-                <span>Show Printable Scissor Cut Lines (✂ - - -)</span>
-              </label>
+              {/* Toggles */}
+              <div className="space-y-1 pt-1 border-t border-slate-200 dark:border-slate-700">
+                <label className="flex items-center space-x-2 text-slate-700 dark:text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showCutLines}
+                    onChange={(e) => setShowCutLines(e.target.checked)}
+                    className="rounded text-indigo-600 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
+                  />
+                  <span className="text-[11px]">Printable Scissor Cut Guides (✂ - - - )</span>
+                </label>
+                <label className="flex items-center space-x-2 text-slate-700 dark:text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showSheetHeader}
+                    onChange={(e) => setShowSheetHeader(e.target.checked)}
+                    className="rounded text-indigo-600 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700"
+                  />
+                  <span className="text-[11px]">Print Reimbursement Claim Header</span>
+                </label>
+              </div>
             </div>
 
             {/* Bills List & Quick Edit */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="font-bold text-slate-800 dark:text-slate-300">Stacked Bills ({bills.length})</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">Stacked Bills ({bills.length})</span>
                 <button
                   onClick={handleAddSingleBill}
                   className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 font-semibold"
@@ -458,124 +547,170 @@ export const FuelStackerModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 </button>
               </div>
 
-              {bills.map((bill, idx) => (
-                <div key={idx} className="p-2.5 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-lg space-y-1.5 shadow-sm">
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-slate-900 dark:text-white">
-                      #{idx + 1} - {bill.brand} ({bill.date})
-                    </span>
-                    <button
-                      onClick={() => handleDeleteBill(idx)}
-                      className="text-red-500 hover:text-red-600 dark:hover:text-red-400"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                {bills.map((bill, idx) => (
+                  <div key={idx} className="p-2 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg space-y-1.5 shadow-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-slate-900 dark:text-white text-[11px]">
+                        #{idx + 1} - {bill.brand} ({bill.date})
+                      </span>
+                      <button
+                        onClick={() => handleDeleteBill(idx)}
+                        className="text-red-500 hover:text-red-600 dark:hover:text-red-400 p-0.5"
+                        title="Delete bill"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5 text-[10.5px]">
+                      <div>
+                        <span className="text-slate-500 dark:text-slate-400 block text-[9.5px]">Amount (₹)</span>
+                        <input
+                          type="number"
+                          value={bill.amount}
+                          onChange={(e) => {
+                            const amt = Number(e.target.value);
+                            handleUpdateBill(idx, {
+                              ...bill,
+                              amount: amt,
+                              volume: Number((amt / (bill.rate || 101.5)).toFixed(2))
+                            });
+                          }}
+                          className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-slate-900 dark:text-white font-bold"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-slate-500 dark:text-slate-400 block text-[9.5px]">Rate / Liter</span>
+                        <input
+                          type="number"
+                          value={bill.rate}
+                          onChange={(e) => {
+                            const r = Number(e.target.value);
+                            handleUpdateBill(idx, {
+                              ...bill,
+                              rate: r,
+                              volume: Number((bill.amount / (r || 101.5)).toFixed(2))
+                            });
+                          }}
+                          className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5 text-[10.5px]">
+                      <div>
+                        <span className="text-slate-500 dark:text-slate-400 block text-[9.5px]">Date</span>
+                        <input
+                          type="text"
+                          value={bill.date}
+                          onChange={(e) => handleUpdateBill(idx, { ...bill, date: e.target.value })}
+                          className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-slate-900 dark:text-white font-mono"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-slate-500 dark:text-slate-400 block text-[9.5px]">Time</span>
+                        <input
+                          type="text"
+                          value={bill.time}
+                          onChange={(e) => handleUpdateBill(idx, { ...bill, time: e.target.value })}
+                          className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 text-slate-900 dark:text-white font-mono"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-[11px]">
-                    <div>
-                      <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Amount (₹)</span>
-                      <input
-                        type="number"
-                        value={bill.amount}
-                        onChange={(e) => {
-                          const amt = Number(e.target.value);
-                          handleUpdateBill(idx, {
-                            ...bill,
-                            amount: amt,
-                            volume: Number((amt / (bill.rate || 101.5)).toFixed(2))
-                          });
-                        }}
-                        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-0.5 text-slate-900 dark:text-white font-bold"
-                      />
-                    </div>
-                    <div>
-                      <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Rate / Liter</span>
-                      <input
-                        type="number"
-                        value={bill.rate}
-                        onChange={(e) => {
-                          const r = Number(e.target.value);
-                          handleUpdateBill(idx, {
-                            ...bill,
-                            rate: r,
-                            volume: Number((bill.amount / (r || 101.5)).toFixed(2))
-                          });
-                        }}
-                        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-0.5 text-slate-900 dark:text-white"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-[11px]">
-                    <div>
-                      <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Date</span>
-                      <input
-                        type="text"
-                        value={bill.date}
-                        onChange={(e) => handleUpdateBill(idx, { ...bill, date: e.target.value })}
-                        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-0.5 text-slate-900 dark:text-white font-mono"
-                      />
-                    </div>
-                    <div>
-                      <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Time</span>
-                      <input
-                        type="text"
-                        value={bill.time}
-                        onChange={(e) => handleUpdateBill(idx, { ...bill, time: e.target.value })}
-                        className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-0.5 text-slate-900 dark:text-white font-mono"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Right A4 Preview Canvas */}
-          <div className="col-span-8 bg-slate-100 dark:bg-slate-950 p-6 overflow-y-auto flex flex-col items-center transition-colors">
+          <div className="col-span-8 bg-slate-100 dark:bg-slate-950 p-4 lg:p-6 overflow-y-auto flex flex-col items-center transition-colors">
             {/* Top Download & Print Bar */}
-            <div className="w-full max-w-[794px] flex justify-between items-center mb-4 text-xs">
-              <span className="text-slate-600 dark:text-slate-400">
-                A4 Sheet Preview (Scaled to Fit) - Ready for Print / PDF Export
-              </span>
-              <div className="flex space-x-2">
+            <div className="w-full max-w-[794px] flex flex-wrap justify-between items-center mb-4 gap-2 text-xs">
+              <div className="text-slate-700 dark:text-slate-300 font-semibold flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-indigo-500" />
+                <span>A4 Sheet Preview • {totalPages} {totalPages === 1 ? 'Page' : 'Pages'} ({bills.length} Bills Total)</span>
+              </div>
+              <div className="flex items-center space-x-2">
                 <button
                   onClick={() => exportToPdf('fuel-stacked-sheet', 'stacked_fuel_bills.pdf')}
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg flex items-center gap-1.5 shadow"
+                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl flex items-center gap-1.5 shadow transition"
                 >
                   <Download className="w-4 h-4" /> Download A4 PDF
                 </button>
                 <button
                   onClick={() => exportToImage('fuel-stacked-sheet', 'stacked_fuel_bills.png')}
-                  className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold rounded-lg border border-slate-300 dark:border-slate-700 shadow-sm"
+                  className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold rounded-xl border border-slate-300 dark:border-slate-700 shadow-sm transition"
                 >
-                  <Download className="w-4 h-4" /> Save PNG
+                  <FileDown className="w-4 h-4" /> Save PNG
                 </button>
                 <button
                   onClick={triggerPrint}
-                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg flex items-center gap-1.5 shadow"
+                  className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl flex items-center gap-1.5 shadow transition"
                 >
                   <Printer className="w-4 h-4" /> Direct Print
                 </button>
               </div>
             </div>
 
-            {/* Printable A4 Container */}
-            <div
-              id="fuel-stacked-sheet"
-              className="bg-white text-black p-4 w-[794px] min-h-[1123px] shadow-xl border border-slate-200 relative print:m-0 print:p-2 print:shadow-none"
-            >
-              <div className={`grid ${layoutColumns === 2 ? 'grid-cols-2 gap-4' : 'grid-cols-1 gap-6'} items-start`}>
-                {bills.map((b, idx) => (
-                  <div key={idx} className="relative flex flex-col items-center">
-                    <FuelThermalReceipt data={b} scale={0.92} />
-                    {showCutLines && (
-                      <div className="w-full border-b border-dashed border-slate-400 text-center text-[9px] text-slate-400 my-2 print:my-1">
-                        ✂ - - - - - Cut Line {idx + 1} - - - - - ✂
+            {/* Printable A4 Container with Multi-Page Sheets */}
+            <div id="fuel-stacked-sheet" className="w-full flex flex-col items-center space-y-8 pb-10">
+              {pageChunks.map((pageBills, pageIdx) => (
+                <div
+                  key={pageIdx}
+                  className="a4-page-sheet bg-white text-black w-[794px] h-[1123px] min-h-[1123px] max-h-[1123px] p-6 shadow-2xl border border-slate-300 flex flex-col justify-between box-border relative select-text overflow-hidden"
+                >
+                  {/* Optional Claim Header */}
+                  {showSheetHeader && (
+                    <div className="border-b-2 border-black pb-2 mb-3 flex justify-between items-end shrink-0">
+                      <div>
+                        <div className="font-black text-sm uppercase tracking-tight">FUEL EXPENSE REIMBURSEMENT VOUCHER</div>
+                        <div className="text-[10px] text-slate-600 mt-0.5">
+                          Vehicle: <span className="font-bold text-black">{batchVehicleNo || 'KA-03-MX-8899'}</span> • Period: <span className="font-bold text-black">{formatDateStr(batchFromDate)} to {formatDateStr(batchToDate)}</span>
+                        </div>
                       </div>
-                    )}
+                      <div className="text-right">
+                        <div className="text-xs font-black text-indigo-950">
+                          Page Amount: ₹{pageBills.reduce((s, b) => s + b.amount, 0).toLocaleString('en-IN')}
+                        </div>
+                        <div className="text-[9.5px] text-slate-600 font-mono font-bold">
+                          Page {pageIdx + 1} of {totalPages} ({pageBills.length} Bills)
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Grid Layout Container fitting A4 exact bounds */}
+                  <div
+                    className={`flex-1 grid ${
+                      layoutMode === '1col_2'
+                        ? 'grid-cols-1 gap-y-4'
+                        : layoutMode === '1col_3'
+                        ? 'grid-cols-1 gap-y-2'
+                        : layoutMode === '2col_6'
+                        ? 'grid-cols-2 gap-x-4 gap-y-2'
+                        : 'grid-cols-2 gap-x-6 gap-y-3'
+                    } items-center justify-items-center`}
+                  >
+                    {pageBills.map((bill, billIdx) => (
+                      <div key={billIdx} className="w-full flex flex-col items-center relative">
+                        <FuelThermalReceipt data={bill} compact={isCompactReceipt} />
+                        {showCutLines && (
+                          <div className="w-full text-center text-[8.5px] text-slate-400 font-mono my-1 tracking-widest no-export flex items-center justify-center gap-1">
+                            <Scissors className="w-2.5 h-2.5 text-slate-400" />
+                            <span>- - - - - - - - - Cut Line - - - - - - - - -</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+
+                  {/* Sheet Footer */}
+                  <div className="border-t border-slate-300 pt-2 mt-2 flex justify-between items-center text-[9px] text-slate-500 font-mono shrink-0">
+                    <span>Page {pageIdx + 1} of {totalPages} • Official Fuel Reimbursement Documentation</span>
+                    <span>Total Claim: ₹{totalStackedAmount.toLocaleString('en-IN')} • Generated via BillCrafter Pro</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
